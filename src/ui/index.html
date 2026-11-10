@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: file:; media-src 'self' file:; style-src 'self'; script-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraDesk</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="titlebar">
+      <div class="brand drag-region" aria-label="AuraDesk">
+        <div class="brand-mark"><span></span><span></span><span></span></div>
+        <div class="brand-copy"><b>AuraDesk</b><small>LIVE WALLPAPERS</small></div>
+      </div>
+      <div class="runtime-chip drag-region" id="runtime-chip"><i></i><span>אין רקע פעיל</span></div>
+      <div class="window-actions">
+        <button class="icon-button" id="minimize-button" aria-label="מזעור">—</button>
+        <button class="icon-button close" id="close-button" aria-label="סגירה">×</button>
+      </div>
+    </header>
+
+    <div class="app-layout">
+      <aside class="sidebar">
+        <nav aria-label="ניווט ראשי">
+          <button class="nav-button active" data-page="library">
+            <span class="nav-icon">▦</span><span>הספרייה שלי</span>
+          </button>
+          <button class="nav-button" data-page="settings">
+            <span class="nav-icon">◉</span><span>הגדרות</span>
+          </button>
+          <button class="nav-button" data-page="about">
+            <span class="nav-icon">?</span><span>אודות</span>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="mini-card">
+            <div class="mini-orbit"><span></span></div>
+            <div><b>רקע חי, מחשב רגוע</b><p>ההנפשה נעצרת כשצריך.</p></div>
+          </div>
+          <div class="version">AuraDesk v0.1</div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="page active" id="page-library">
+          <div class="hero">
+            <div>
+              <p class="eyebrow">המרחב שלך · בתנועה</p>
+              <h1>בוקר טוב, <span>מה נרצה לראות היום?</span></h1>
+              <p>בחרו רקע מהספרייה או הוסיפו וידאו, GIF או אתר משלכם.</p>
+            </div>
+            <button class="primary-button" id="open-add-modal"><span>＋</span> הוספת רקע</button>
+          </div>
+
+          <div class="toolbar">
+            <div class="section-heading">
+              <h2>הספרייה שלי</h2><span id="library-count">0 רקעים</span>
+            </div>
+            <label class="search-box">
+              <span>⌕</span><input type="search" id="search-input" placeholder="חיפוש בספרייה…" autocomplete="off">
+            </label>
+          </div>
+
+          <div class="wallpaper-grid" id="wallpaper-grid" aria-live="polite"></div>
+        </section>
+
+        <section class="page" id="page-settings">
+          <div class="page-header">
+            <p class="eyebrow">התנהגות וביצועים</p>
+            <h1>הגדרות</h1>
+            <p>התאימו את AuraDesk למחשב ולסגנון העבודה שלכם.</p>
+          </div>
+          <div class="settings-layout">
+            <div class="settings-card">
+              <div class="settings-card-title"><span class="setting-icon purple">▣</span><div><h2>תצוגה</h2><p>בחרו באיזה מסך יופיע הרקע.</p></div></div>
+              <label class="select-label" for="display-select">מסך יעד</label>
+              <select id="display-select"></select>
+              <p class="setting-note">שינוי המסך ייכנס לתוקף בפעם הבאה שתפעילו רקע.</p>
+            </div>
+            <div class="settings-card">
+              <div class="settings-card-title"><span class="setting-icon cyan">ϟ</span><div><h2>חיסכון במשאבים</h2><p>AuraDesk יודעת מתי לקחת צעד אחורה.</p></div></div>
+              <label class="toggle-row"><div><b>השהיה ביישום במסך מלא</b><span>מתאים למשחקים, וידאו ומצגות</span></div><input type="checkbox" id="pause-fullscreen"><i></i></label>
+              <label class="toggle-row"><div><b>השהיה בזמן עבודה על סוללה</b><span>מסייע להאריך את זמן הסוללה</span></div><input type="checkbox" id="pause-battery"><i></i></label>
+            </div>
+            <div class="settings-card">
+              <div class="settings-card-title"><span class="setting-icon pink">♪</span><div><h2>צליל והפעלה</h2><p>שליטה בחוויית הרקע.</p></div></div>
+              <label class="toggle-row"><div><b>השתקת רקעים</b><span>וידאו ואתרים יפעלו ללא קול</span></div><input type="checkbox" id="mute-audio"><i></i></label>
+              <label class="toggle-row"><div><b>הפעלה עם Windows</b><span>AuraDesk תהיה זמינה ממגש המערכת</span></div><input type="checkbox" id="start-login"><i></i></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-about">
+          <div class="about-card">
+            <div class="about-logo"><div class="brand-mark large"><span></span><span></span><span></span></div></div>
+            <p class="eyebrow">AURADESK · VERSION 0.1</p>
+            <h1>שולחן העבודה, אבל חי.</h1>
+            <p class="about-lead">AuraDesk היא אפליקציית Windows מקורית להצגת וידאו, GIF, תמונות ודפי אינטרנט כרקע שולחן העבודה.</p>
+            <div class="feature-row">
+              <div><b>◈</b><span>שלושה רקעים מובנים</span></div>
+              <div><b>ϟ</b><span>השהיה חכמה</span></div>
+              <div><b>▣</b><span>תמיכה במסכים</span></div>
+            </div>
+            <p class="about-note">נבנה כמוצר מקורי בהשראת הקטגוריה של אפליקציות רקע חי. אינו קשור ל‑Lively Wallpaper.</p>
+            <button class="ghost-button" id="github-link">פתיחת יומן אבחון</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="playback-bar">
+      <div class="now-playing">
+        <div class="now-preview" id="now-preview"><span>◌</span></div>
+        <div><small>מוצג עכשיו</small><b id="now-title">אין רקע פעיל</b></div>
+      </div>
+      <div class="playback-actions">
+        <button class="round-button" id="pause-button" disabled aria-label="השהיה או המשך">Ⅱ</button>
+        <button class="stop-button" id="stop-button" disabled>עצירת הרקע</button>
+      </div>
+      <div class="performance-badge"><i></i><div><small>מצב ביצועים</small><b id="performance-text">מוכן להפעלה</b></div></div>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="add-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" id="close-add-modal" aria-label="סגירה">×</button>
+      <div class="modal-icon">＋</div>
+      <p class="eyebrow">הוספה לספרייה</p>
+      <h2 id="modal-title">מאיפה מגיע הרקע?</h2>
+      <p>בחרו קובץ מהמחשב או הזינו כתובת של דף אינטרנט.</p>
+      <button class="source-card" id="choose-file-button">
+        <span class="source-icon purple">▶</span><div><b>וידאו, GIF או תמונה</b><small>MP4, WebM, MOV, GIF, WebP, PNG, JPG</small></div><strong>‹</strong>
+      </button>
+      <div class="or-divider"><span>או</span></div>
+      <form id="url-form">
+        <label for="url-input">כתובת אינטרנט</label>
+        <div class="url-row"><input id="url-input" type="url" placeholder="https://example.com" dir="ltr"><button type="submit">הוספה</button></div>
+        <p class="form-error" id="url-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "name": "auradesk",
+  "version": "0.2.0",
+  "description": "רקעים חיים לשולחן העבודה של Windows",
+  "main": "src/main.js",
+  "author": "AuraDesk",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "build:icon": "node scripts/build-icon.js",
+    "dist": "npm run test && npm run build:icon && electron-builder --win portable nsis --x64",
+    "dist:portable": "npm run test && npm run build:icon && electron-builder --win portable --x64",
+    "dist:installer": "npm run test && npm run build:icon && electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0",
+    "png-to-ico": "3.0.1",
+    "sharp": "0.34.5"
+  },
+  "build": {
+    "appId": "com.auradesk.wallpaper",
+    "productName": "AuraDesk",
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "src/scripts/desktop-host.ps1",
+        "to": "desktop-host.ps1"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "portable": {
+      "artifactName": "AuraDesk-${version}-portable.${ext}"
+    },
+    "nsis": {
+      "artifactName": "AuraDesk-Setup-${version}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AuraDesk",
+      "uninstallDisplayName": "AuraDesk"
+    }
+  }
+}

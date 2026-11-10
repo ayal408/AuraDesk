@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+html, body, #wallpaper-root { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #05060b; }
+body { cursor: default; }
+.media { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+.aurora-scene { position: relative; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at 72% 14%, #45106f 0, transparent 32%), radial-gradient(circle at 18% 87%, #075b62 0, transparent 45%), linear-gradient(145deg,#030617,#0a1235 48%,#15123c); }
+.aurora-scene::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% 120%,#3edcc522,transparent 47%); }
+.aurora-ribbon { position:absolute; width:110vw; height:47vh; left:-8vw; top:-5vh; border-radius:50%; mix-blend-mode:screen; filter:blur(35px); opacity:.62; transform-origin:50% 20%; }
+.aurora-ribbon.one { background:linear-gradient(90deg,transparent 8%,#34e2bd 28%,#378fdc 51%,#a73ad9 70%,transparent 92%); animation:aurora-one 10s ease-in-out infinite alternate; }
+.aurora-ribbon.two { top:18vh; left:-16vw; background:linear-gradient(90deg,transparent,#7e40e8 25%,#32d8d7 56%,#4ff092 72%,transparent); filter:blur(48px); opacity:.4; animation:aurora-two 14s ease-in-out infinite alternate; }
+.aurora-ribbon.three { top:5vh; left:25vw; width:70vw; background:linear-gradient(90deg,transparent,#ef52d1 45%,#654bea 67%,transparent); filter:blur(60px); opacity:.32; animation:aurora-three 12s ease-in-out infinite alternate; }
+.star { position:absolute; width:2px; height:2px; background:white; border-radius:50%; box-shadow:0 0 7px #fff; animation:twinkle var(--speed) ease-in-out infinite alternate; }
+@keyframes aurora-one { from { transform:rotate(-7deg) scaleY(.7) translateY(-5vh); } to { transform:rotate(5deg) scaleY(1.22) translateY(13vh); } }
+@keyframes aurora-two { from { transform:rotate(10deg) translateX(-8vw) scaleY(.8); } to { transform:rotate(-4deg) translateX(6vw) scaleY(1.2); } }
+@keyframes aurora-three { from { transform:rotate(-12deg) translateY(-3vh); } to { transform:rotate(8deg) translateY(12vh); } }
+@keyframes twinkle { to { opacity:.15; transform:scale(.5); } }
+
+.nebula-scene { position:relative; width:100%; height:100%; overflow:hidden; background:radial-gradient(ellipse at 45% 55%,#351a68 0,#181343 22%,#08142d 48%,#03050d 78%); }
+.nebula-scene::before { content:""; position:absolute; inset:-30%; background:conic-gradient(from 20deg,transparent,#8a48dc18,#29cedc20,transparent,#e851bb16,transparent); filter:blur(28px); animation:nebula-drift 22s linear infinite; }
+.nebula-scene canvas { position:absolute; inset:0; width:100%; height:100%; }
+@keyframes nebula-drift { to { transform:rotate(360deg) scale(1.08); } }
+
+.grid-scene { position:relative; width:100%; height:100%; overflow:hidden; perspective:360px; background:linear-gradient(#17113c,#0d0a22 45%,#05050d 55%); }
+.grid-sun { position:absolute; width:min(27vw,360px); aspect-ratio:1; border-radius:50%; left:50%; top:13%; transform:translateX(-50%); background:repeating-linear-gradient(to bottom,#ffdb69 0 8px,#ff8868 9px 18px,#fb3da5 19px 27px,transparent 28px 33px); filter:drop-shadow(0 0 32px #ff3ca988); }
+.grid-mountains { position:absolute; left:0; right:0; top:41%; height:18%; background:linear-gradient(145deg,transparent 12%,#321261 13% 22%,transparent 23% 28%,#25105b 29% 44%,transparent 45% 53%,#41145f 54% 66%,transparent 67%),linear-gradient(215deg,transparent 10%,#341362 11% 28%,transparent 29% 38%,#20104b 39% 53%,transparent 54%); border-bottom:2px solid #ff41cb; filter:drop-shadow(0 2px 8px #ff31c9); }
+.grid-floor { position:absolute; left:-35%; right:-35%; top:55%; bottom:-60%; transform:rotateX(63deg); transform-origin:top; background-image:linear-gradient(#bc35ff 2px,transparent 2px),linear-gradient(90deg,#bc35ff 2px,transparent 2px); background-size:80px 54px; animation:grid-travel 1.6s linear infinite; box-shadow:inset 0 20px 60px #07040b; }
+.grid-glow { position:absolute; left:0; right:0; top:52%; height:6px; background:#ff44d2; box-shadow:0 0 30px 8px #c82bff; }
+@keyframes grid-travel { to { background-position:0 54px,80px 0; } }
+
+.paused *, .paused *::before, .paused *::after { animation-play-state: paused !important; }

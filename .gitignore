@@ -1,0 +1,5 @@
+node_modules/
+dist/
+assets/icon.png
+assets/icon.ico
+*.log
