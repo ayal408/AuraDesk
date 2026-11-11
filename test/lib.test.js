@@ -6,7 +6,8 @@ const {
   normalizeWebUrl,
   itemFromFile,
   itemFromUrl,
-  nativeHandleToString
+  nativeHandleToString,
+  nativeDisplayBounds
 } = require('../src/lib');
 
 test('default state contains the three built-in wallpapers', () => {
@@ -41,4 +42,18 @@ test('native Windows handles are serialized without precision loss', () => {
   handle.writeBigUInt64LE(0x1234567890ABCDEFn);
   assert.equal(nativeHandleToString(handle), '1311768467294899695');
   assert.throws(() => nativeHandleToString(Buffer.alloc(2)), /valid native window handle/);
+});
+
+test('display bounds are converted from Electron DIP units to native pixels', () => {
+  assert.deepEqual(nativeDisplayBounds({
+    bounds: { x: 0, y: 0, width: 1536, height: 864 },
+    scaleFactor: 1.25,
+    nativeOrigin: { x: 0, y: 0 }
+  }), { x: 0, y: 0, width: 1920, height: 1080 });
+
+  assert.deepEqual(nativeDisplayBounds({
+    bounds: { x: -1280, y: 0, width: 1280, height: 720 },
+    scaleFactor: 1.5,
+    nativeOrigin: { x: -1920, y: 0 }
+  }), { x: -1920, y: 0, width: 1920, height: 1080 });
 });

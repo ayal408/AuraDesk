@@ -130,6 +130,18 @@ function nativeHandleToString(handle) {
     : String(handle.readUInt32LE(0));
 }
 
+function nativeDisplayBounds(display) {
+  const bounds = display?.bounds || { x: 0, y: 0, width: 1, height: 1 };
+  const scaleFactor = Number(display?.scaleFactor) > 0 ? Number(display.scaleFactor) : 1;
+  const nativeOrigin = display?.nativeOrigin;
+  return {
+    x: Number.isFinite(nativeOrigin?.x) ? Math.round(nativeOrigin.x) : Math.round(bounds.x * scaleFactor),
+    y: Number.isFinite(nativeOrigin?.y) ? Math.round(nativeOrigin.y) : Math.round(bounds.y * scaleFactor),
+    width: Math.max(1, Math.round(bounds.width * scaleFactor)),
+    height: Math.max(1, Math.round(bounds.height * scaleFactor))
+  };
+}
+
 module.exports = {
   BUILTIN_WALLPAPERS,
   DEFAULT_SETTINGS,
@@ -138,5 +150,6 @@ module.exports = {
   normalizeWebUrl,
   itemFromFile,
   itemFromUrl,
-  nativeHandleToString
+  nativeHandleToString,
+  nativeDisplayBounds
 };

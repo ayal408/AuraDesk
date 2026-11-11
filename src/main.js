@@ -19,7 +19,8 @@ const {
   normalizeState,
   itemFromFile,
   itemFromUrl,
-  nativeHandleToString
+  nativeHandleToString,
+  nativeDisplayBounds
 } = require('./lib');
 
 const APP_NAME = 'AuraDesk';
@@ -231,7 +232,15 @@ async function applyWallpaper(id) {
 
   stopWallpaper(false);
   const display = getDisplay();
-  appendLog('wallpaper-apply-start', { id: item.id, kind: item.kind, displayId: display.id, bounds: display.bounds });
+  const desktopBounds = nativeDisplayBounds(display);
+  appendLog('wallpaper-apply-start', {
+    id: item.id,
+    kind: item.kind,
+    displayId: display.id,
+    dipBounds: display.bounds,
+    nativeBounds: desktopBounds,
+    scaleFactor: display.scaleFactor
+  });
   const title = `AuraDeskWallpaper_${process.pid}_${Date.now()}`;
   wallpaperWindow = new BrowserWindow({
     x: display.bounds.x,
@@ -283,7 +292,7 @@ async function applyWallpaper(id) {
     createdWindow.setTitle(title);
     createdWindow.showInactive();
     await new Promise((resolve) => setTimeout(resolve, 250));
-    const attachResult = await attachToDesktop(createdWindow, display.bounds);
+    const attachResult = await attachToDesktop(createdWindow, desktopBounds);
     appendLog('wallpaper-attached', { result: attachResult });
     createdWindow.setOpacity(1);
   } catch (error) {
