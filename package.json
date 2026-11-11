@@ -1,6 +1,6 @@
 {
   "name": "auradesk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "רקעים חיים לשולחן העבודה של Windows",
   "main": "src/main.js",
   "author": "AuraDesk",
@@ -19,9 +19,18 @@
     "png-to-ico": "3.0.1",
     "sharp": "0.34.5"
   },
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  },
   "build": {
     "appId": "com.auradesk.wallpaper",
     "productName": "AuraDesk",
+    "publish": {
+      "provider": "github",
+      "owner": "ayal408",
+      "repo": "AuraDesk",
+      "releaseType": "release"
+    },
     "asar": true,
     "electronDist": "node_modules/electron/dist",
     "directories": {

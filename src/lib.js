@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   pauseFullscreen: true,
   pauseOnBattery: true,
   muted: true,
+  autoUpdate: true,
   startAtLogin: false,
   displayId: 'primary'
 });
@@ -56,7 +57,7 @@ function normalizeState(value) {
     version: 1,
     library: [
       ...BUILTIN_WALLPAPERS.map((item) => ({ ...item })),
-      ...custom.filter((item) => ['video', 'image', 'web'].includes(item.kind))
+      ...custom.filter((item) => ['video', 'image', 'web', 'html'].includes(item.kind))
     ],
     selectedId: typeof value.selectedId === 'string' ? value.selectedId : null,
     settings: {
@@ -93,13 +94,14 @@ function itemFromFile(filePath, title) {
   let kind;
   if (videoExtensions.has(extension)) kind = 'video';
   if (imageExtensions.has(extension)) kind = 'image';
+  if (extension === 'html' || extension === 'htm') kind = 'html';
   if (!kind) throw new Error('סוג הקובץ אינו נתמך.');
 
   const fallbackTitle = String(filePath).split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
   return {
     id: crypto.randomUUID(),
     title: String(title || fallbackTitle).trim().slice(0, 80),
-    subtitle: kind === 'video' ? 'וידאו מקומי' : 'תמונה מונפשת',
+    subtitle: kind === 'video' ? 'וידאו מקומי' : kind === 'html' ? 'HTML מקומי' : 'תמונה מונפשת',
     kind,
     source: filePath,
     accent: '#6f8cff',

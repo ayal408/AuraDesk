@@ -34,6 +34,7 @@ test('web URLs receive https and reject unsafe protocols', () => {
 test('file and URL items get the expected kinds', () => {
   assert.equal(itemFromFile('C:\\media\\ocean.mp4').kind, 'video');
   assert.equal(itemFromFile('C:\\media\\loop.gif').kind, 'image');
+  assert.equal(itemFromFile('C:\\wallpapers\\clock.html').kind, 'html');
   assert.equal(itemFromUrl('https://example.com').kind, 'web');
 });
 

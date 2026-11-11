@@ -1,5 +1,6 @@
 let appState = null;
 let runtime = null;
+let updateState = null;
 let toastTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
@@ -19,7 +20,7 @@ function currentItem() {
 }
 
 function typeLabel(kind) {
-  return ({ builtin: 'AURADESK', video: 'VIDEO', image: 'IMAGE', web: 'WEB' })[kind] || kind;
+  return ({ builtin: 'AURADESK', video: 'VIDEO', image: 'IMAGE', web: 'WEB', html: 'HTML' })[kind] || kind;
 }
 
 function makePreview(item, compact = false) {
@@ -41,11 +42,11 @@ function makePreview(item, compact = false) {
     image.src = item.previewUrl;
     image.alt = '';
     preview.append(image);
-  } else if (item.kind === 'web') {
+  } else if (item.kind === 'web' || item.kind === 'html') {
     preview.classList.add('aurora');
     preview.style.background = `radial-gradient(circle at 30% 25%, ${item.accent}88, transparent 38%), linear-gradient(135deg,#0b1525,#18233d)`;
     const icon = document.createElement('span');
-    icon.textContent = '⌁';
+    icon.textContent = item.kind === 'html' ? '</>' : '⌁';
     icon.style.cssText = 'font-size:34px;color:#ffffffaa;position:relative;z-index:2';
     preview.append(icon);
   } else if (!compact && !item.source) {
@@ -142,6 +143,7 @@ function renderSettings() {
   $('#pause-fullscreen').checked = Boolean(appState.settings.pauseFullscreen);
   $('#pause-battery').checked = Boolean(appState.settings.pauseOnBattery);
   $('#mute-audio').checked = Boolean(appState.settings.muted);
+  $('#auto-update').checked = Boolean(appState.settings.autoUpdate);
   $('#start-login').checked = Boolean(appState.settings.startAtLogin);
 
   const select = $('#display-select');
@@ -158,6 +160,16 @@ function renderSettings() {
   }
   select.value = String(appState.settings.displayId || 'primary');
   if (!select.value) select.value = 'primary';
+  renderUpdateState();
+}
+
+function renderUpdateState() {
+  const status = $('#update-status');
+  const button = $('#check-update-button');
+  if (!status || !button || !updateState) return;
+  status.textContent = updateState.message;
+  button.disabled = updateState.status === 'checking' || updateState.status === 'downloading';
+  button.textContent = updateState.status === 'checking' ? 'בודק…' : 'בדיקה עכשיו';
 }
 
 function renderRuntime() {
@@ -231,8 +243,13 @@ function bindEvents() {
   $('#pause-fullscreen').addEventListener('change', (event) => saveSetting('pauseFullscreen', event.target.checked));
   $('#pause-battery').addEventListener('change', (event) => saveSetting('pauseOnBattery', event.target.checked));
   $('#mute-audio').addEventListener('change', (event) => saveSetting('muted', event.target.checked));
+  $('#auto-update').addEventListener('change', (event) => saveSetting('autoUpdate', event.target.checked));
   $('#start-login').addEventListener('change', (event) => saveSetting('startAtLogin', event.target.checked));
   $('#display-select').addEventListener('change', (event) => saveSetting('displayId', event.target.value));
+  $('#check-update-button').addEventListener('click', async () => {
+    const result = await window.auradesk.checkForUpdates();
+    if (!result.ok) showToast(result.error || 'בדיקת העדכונים נכשלה.', true);
+  });
   $('#github-link').addEventListener('click', async () => {
     const result = await window.auradesk.openLog();
     if (!result.ok) showToast(result.error || 'לא ניתן לפתוח את יומן האבחון.', true);
@@ -244,6 +261,7 @@ async function initialize() {
   const bootstrap = await window.auradesk.bootstrap();
   appState = bootstrap.state;
   runtime = bootstrap.runtime;
+  updateState = bootstrap.update;
   renderSettings();
   renderRuntime();
   window.auradesk.onState((nextState) => {
@@ -254,6 +272,10 @@ async function initialize() {
   window.auradesk.onRuntime((nextRuntime) => {
     runtime = nextRuntime;
     renderRuntime();
+  });
+  window.auradesk.onUpdate((nextUpdate) => {
+    updateState = nextUpdate;
+    renderUpdateState();
   });
 }
 

@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('auradesk', {
   close: () => ipcRenderer.send('window:close'),
   openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
   openLog: () => ipcRenderer.invoke('app:open-log'),
+  checkForUpdates: () => ipcRenderer.invoke('app:check-updates'),
   onState: (callback) => {
     const listener = (_event, state) => callback(state);
     ipcRenderer.on('state:changed', listener);
@@ -22,5 +23,10 @@ contextBridge.exposeInMainWorld('auradesk', {
     const listener = (_event, runtime) => callback(runtime);
     ipcRenderer.on('runtime:changed', listener);
     return () => ipcRenderer.removeListener('runtime:changed', listener);
+  },
+  onUpdate: (callback) => {
+    const listener = (_event, update) => callback(update);
+    ipcRenderer.on('update:changed', listener);
+    return () => ipcRenderer.removeListener('update:changed', listener);
   }
 });

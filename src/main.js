@@ -14,6 +14,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { spawn } = require('node:child_process');
+const { autoUpdater } = require('electron-updater');
 const {
   defaultState,
   normalizeState,
@@ -30,6 +31,8 @@ let mainWindow = null;
 let wallpaperWindow = null;
 let tray = null;
 let fullscreenWatcher = null;
+let updateTimer = null;
+let updatePromptShown = false;
 let state = defaultState();
 let statePath = '';
 let logPath = '';
@@ -41,6 +44,13 @@ let runtime = {
   onBattery: false,
   userPaused: false,
   error: null
+};
+let updateState = {
+  status: 'idle',
+  message: 'טרם נבדקו עדכונים',
+  progress: null,
+  version: null,
+  supported: false
 };
 
 function appendLog(event, details = {}) {
@@ -99,6 +109,105 @@ function notifyState() {
 
 function notifyRuntime() {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('runtime:changed', { ...runtime });
+}
+
+function notifyUpdate(patch = {}) {
+  updateState = { ...updateState, ...patch };
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update:changed', { ...updateState });
+}
+
+function isInstalledBuild() {
+  return app.isPackaged && !process.env.PORTABLE_EXECUTABLE_FILE;
+}
+
+async function checkForUpdates(manual = false) {
+  if (!isInstalledBuild()) {
+    if (manual) {
+      await shell.openExternal('https://github.com/ayal408/AuraDesk/releases/latest');
+      notifyUpdate({ status: 'external', message: 'נפתח עמוד ההורדות לגרסת Portable', supported: false });
+      return { ok: true, external: true };
+    }
+    return { ok: false, error: 'עדכונים אוטומטיים זמינים בגרסה המותקנת בלבד.' };
+  }
+  try {
+    notifyUpdate({ status: 'checking', message: 'בודק אם קיים עדכון…', supported: true, progress: null });
+    await autoUpdater.checkForUpdates();
+    return { ok: true };
+  } catch (error) {
+    appendLog('update-check-error', { message: error.message });
+    notifyUpdate({ status: 'error', message: 'בדיקת העדכונים נכשלה', supported: true, progress: null });
+    return { ok: false, error: error.message };
+  }
+}
+
+function scheduleUpdateChecks(delay = 12000) {
+  if (updateTimer) clearTimeout(updateTimer);
+  if (!state.settings.autoUpdate || !isInstalledBuild()) return;
+  updateTimer = setTimeout(async () => {
+    await checkForUpdates(false);
+    updateTimer = setInterval(() => checkForUpdates(false), 6 * 60 * 60 * 1000);
+  }, delay);
+}
+
+function setupAutoUpdater() {
+  updateState.supported = isInstalledBuild();
+  if (!isInstalledBuild()) {
+    notifyUpdate({ status: 'portable', message: 'Portable: בדיקה ידנית דרך GitHub', supported: false });
+    return;
+  }
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+  autoUpdater.logger = {
+    info: (message) => appendLog('updater-info', { message: String(message) }),
+    warn: (message) => appendLog('updater-warning', { message: String(message) }),
+    error: (message) => appendLog('updater-error', { message: String(message) }),
+    debug: (message) => appendLog('updater-debug', { message: String(message) })
+  };
+
+  autoUpdater.on('checking-for-update', () => notifyUpdate({ status: 'checking', message: 'בודק אם קיים עדכון…', progress: null }));
+  autoUpdater.on('update-available', (info) => {
+    appendLog('update-available', { version: info.version });
+    notifyUpdate({ status: 'available', message: `מוריד את גרסה ${info.version}…`, version: info.version, progress: 0 });
+  });
+  autoUpdater.on('update-not-available', (info) => {
+    notifyUpdate({ status: 'current', message: `AuraDesk ${info.version} מעודכנת`, version: info.version, progress: null });
+  });
+  autoUpdater.on('download-progress', (progress) => {
+    const percent = Math.max(0, Math.min(100, Math.round(progress.percent)));
+    notifyUpdate({ status: 'downloading', message: `מוריד עדכון · ${percent}%`, progress: percent });
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    appendLog('update-downloaded', { version: info.version });
+    notifyUpdate({ status: 'ready', message: `גרסה ${info.version} מוכנה להתקנה`, version: info.version, progress: 100 });
+    if (updatePromptShown) return;
+    updatePromptShown = true;
+    const messageBoxOptions = {
+      type: 'info',
+      title: 'עדכון AuraDesk מוכן',
+      message: `גרסה ${info.version} הורדה בהצלחה.`,
+      detail: 'אפשר להפעיל מחדש עכשיו, או שהעדכון יותקן אוטומטית ביציאה הבאה.',
+      buttons: ['הפעלה מחדש ועדכון', 'מאוחר יותר'],
+      defaultId: 0,
+      cancelId: 1
+    };
+    const prompt = mainWindow && !mainWindow.isDestroyed()
+      ? dialog.showMessageBox(mainWindow, messageBoxOptions)
+      : dialog.showMessageBox(messageBoxOptions);
+    prompt.then(({ response }) => {
+      if (response === 0) {
+        app.isQuitting = true;
+        autoUpdater.quitAndInstall(false, true);
+      }
+    });
+  });
+  autoUpdater.on('error', (error) => {
+    appendLog('updater-error', { message: error.message, stack: error.stack });
+    notifyUpdate({ status: 'error', message: 'אירעה שגיאה בעדכון האוטומטי', progress: null });
+  });
+
+  scheduleUpdateChecks();
 }
 
 function updateLoginSetting() {
@@ -226,7 +335,7 @@ async function attachToDesktop(window, bounds) {
 async function applyWallpaper(id) {
   const item = state.library.find((entry) => entry.id === id);
   if (!item) throw new Error('הרקע המבוקש לא נמצא.');
-  if (['video', 'image'].includes(item.kind) && !fs.existsSync(item.source)) {
+  if (['video', 'image', 'html'].includes(item.kind) && !fs.existsSync(item.source)) {
     throw new Error('הקובץ המקורי לא נמצא. אפשר להסיר אותו מהספרייה ולהוסיף מחדש.');
   }
 
@@ -282,6 +391,8 @@ async function applyWallpaper(id) {
   try {
     if (item.kind === 'web') {
       await createdWindow.loadURL(item.source);
+    } else if (item.kind === 'html') {
+      await createdWindow.loadFile(item.source);
     } else {
       const wallpaperConfig = { kind: item.kind, source: item.source };
       if (['video', 'image'].includes(item.kind)) wallpaperConfig.source = pathToFileURL(item.source).href;
@@ -354,13 +465,14 @@ function applySuspensionState() {
   if (wallpaperWindow && !wallpaperWindow.isDestroyed()) {
     wallpaperWindow.webContents.send('playback', paused ? 'pause' : 'play');
     wallpaperWindow.webContents.setAudioMuted(Boolean(state.settings.muted) || paused);
-    if (wallpaperWindow.webContents.getURL().startsWith('http')) {
-      const command = paused ? 'pause' : 'play';
-      wallpaperWindow.webContents.executeJavaScript(
-        `document.querySelectorAll('video,audio').forEach((element) => { try { element.${command}(); } catch {} });`,
-        true
-      ).catch(() => {});
-    }
+    const command = paused ? 'pause' : 'play';
+    const animationControl = paused
+      ? `if (!document.getElementById('__auradesk_pause_style')) { const style = document.createElement('style'); style.id = '__auradesk_pause_style'; style.textContent = '*{animation-play-state:paused!important}'; document.head.appendChild(style); }`
+      : `document.getElementById('__auradesk_pause_style')?.remove();`;
+    wallpaperWindow.webContents.executeJavaScript(
+      `${animationControl} document.querySelectorAll('video,audio').forEach((element) => { try { element.${command}(); } catch {} });`,
+      true
+    ).catch(() => {});
   }
   notifyRuntime();
   refreshTray();
@@ -397,19 +509,20 @@ function startFullscreenWatcher() {
 
 function quitApp() {
   app.isQuitting = true;
+  if (updateTimer) clearTimeout(updateTimer);
   if (fullscreenWatcher) fullscreenWatcher.kill();
   stopWallpaper(false);
   app.quit();
 }
 
 function registerIpc() {
-  ipcMain.handle('app:bootstrap', () => ({ state: publicState(), runtime: { ...runtime } }));
+  ipcMain.handle('app:bootstrap', () => ({ state: publicState(), runtime: { ...runtime }, update: { ...updateState } }));
   ipcMain.handle('library:choose-file', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: 'בחירת וידאו או תמונה',
       properties: ['openFile'],
       filters: [
-        { name: 'רקעים נתמכים', extensions: ['mp4', 'webm', 'mov', 'm4v', 'avi', 'gif', 'webp', 'png', 'jpg', 'jpeg', 'bmp'] },
+        { name: 'רקעים נתמכים', extensions: ['mp4', 'webm', 'mov', 'm4v', 'avi', 'gif', 'webp', 'png', 'jpg', 'jpeg', 'bmp', 'html', 'htm'] },
         { name: 'כל הקבצים', extensions: ['*'] }
       ]
     });
@@ -459,7 +572,7 @@ function registerIpc() {
   ipcMain.handle('wallpaper:stop', () => stopWallpaper());
   ipcMain.handle('wallpaper:toggle-pause', () => toggleUserPause());
   ipcMain.handle('settings:update', async (_event, changes) => {
-    const allowed = ['pauseFullscreen', 'pauseOnBattery', 'muted', 'startAtLogin', 'displayId'];
+    const allowed = ['pauseFullscreen', 'pauseOnBattery', 'muted', 'autoUpdate', 'startAtLogin', 'displayId'];
     for (const key of allowed) {
       if (Object.hasOwn(changes || {}, key)) state.settings[key] = changes[key];
     }
@@ -469,6 +582,10 @@ function registerIpc() {
       wallpaperWindow.webContents.setAudioMuted(Boolean(state.settings.muted) || runtime.paused);
     }
     applySuspensionState();
+    if (Object.hasOwn(changes || {}, 'autoUpdate')) {
+      if (state.settings.autoUpdate) scheduleUpdateChecks(500);
+      else if (updateTimer) clearTimeout(updateTimer);
+    }
     notifyState();
     return { ok: true };
   });
@@ -483,6 +600,7 @@ function registerIpc() {
     const error = await shell.openPath(logPath);
     return error ? { ok: false, error } : { ok: true };
   });
+  ipcMain.handle('app:check-updates', () => checkForUpdates(true));
 }
 
 app.on('second-instance', () => showMainWindow());
@@ -498,6 +616,7 @@ app.whenReady().then(() => {
   createMainWindow();
   createTray();
   startFullscreenWatcher();
+  setupAutoUpdater();
   powerMonitor.on('on-battery', () => {
     runtime.onBattery = true;
     applySuspensionState();
