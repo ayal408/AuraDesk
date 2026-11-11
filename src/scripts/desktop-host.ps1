@@ -92,7 +92,13 @@ public static class AuraDeskNative
     private const int GWL_STYLE = -16;
     private const int GWL_EXSTYLE = -20;
     private const int WS_CHILD = 0x40000000;
+    private const int WS_VISIBLE = 0x10000000;
     private const int WS_POPUP = unchecked((int)0x80000000);
+    private const int WS_CAPTION = 0x00C00000;
+    private const int WS_THICKFRAME = 0x00040000;
+    private const int WS_SYSMENU = 0x00080000;
+    private const int WS_MINIMIZEBOX = 0x00020000;
+    private const int WS_MAXIMIZEBOX = 0x00010000;
     private const int WS_EX_LAYERED = 0x00080000;
     private const int WS_EX_NOREDIRECTIONBITMAP = 0x00200000;
     private const uint WM_SPAWN_WORKER = 0x052C;
@@ -101,6 +107,7 @@ public static class AuraDeskNative
     private const uint SWP_NOSIZE = 0x0001;
     private const uint SWP_NOMOVE = 0x0002;
     private const uint SWP_NOACTIVATE = 0x0010;
+    private const uint SWP_FRAMECHANGED = 0x0020;
     private const uint SWP_SHOWWINDOW = 0x0040;
     private const int SW_SHOWNA = 8;
     private const uint MONITOR_DEFAULTTONEAREST = 2;
@@ -130,7 +137,9 @@ public static class AuraDeskNative
     private static void SetChildStyle(IntPtr window, bool layered)
     {
         int style = GetWindowLong(window, GWL_STYLE);
-        SetWindowLong(window, GWL_STYLE, (style | WS_CHILD) & ~WS_POPUP);
+        int borderlessChild = (style | WS_CHILD | WS_VISIBLE)
+            & ~(WS_POPUP | WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+        SetWindowLong(window, GWL_STYLE, borderlessChild);
         if (layered)
         {
             int exStyle = GetWindowLong(window, GWL_EXSTYLE);
@@ -205,7 +214,7 @@ public static class AuraDeskNative
         }
 
         SetParent(window, host);
-        bool positioned = SetWindowPos(window, insertAfter, x - hostRect.Left, y - hostRect.Top, width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        bool positioned = SetWindowPos(window, insertAfter, x - hostRect.Left, y - hostRect.Top, width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
         if (raisedDesktop)
         {
             IntPtr worker = FindWindowEx(progman, IntPtr.Zero, "WorkerW", null);

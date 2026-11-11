@@ -1,6 +1,6 @@
 {
   "name": "auradesk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "רקעים חיים לשולחן העבודה של Windows",
   "main": "src/main.js",
   "author": "AuraDesk",
